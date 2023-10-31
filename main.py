@@ -4,6 +4,8 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.textinput import TextInput
+from kivy.clock import Clock
+from kivy.properties import BooleanProperty
 import instr
 
 
@@ -54,23 +56,30 @@ class SecondScreen(Screen):
         self.input1 = TextInput()
         layout = BoxLayout(padding=10, spacing=10, orientation='vertical')
         layout1 = BoxLayout(orientation='horizontal', size_hint=(1, None), height="30sp")
+        self.timer = Time(15)
+        self.next_screen = False
         layout.add_widget(text)
         layout1.add_widget(text1)
         layout1.add_widget(self.input1)
         layout.add_widget(layout1)
-        button = Button(text='Далее', size_hint=(.5, .2),
+        layout1.add_widget(self.timer)
+        self.button = Button(text='Далее', size_hint=(.5, .2),
                         pos_hint={'center_x': 0.5, 'center_y': 0.5})
-        button.on_press = self.next
-        layout.add_widget(button)
+        self.button.on_press = self.next
+        layout.add_widget(self.button)
         self.add_widget(layout)
 
     def next(self):
-        result = check_int(self.input1.text)
-        if not result:
-            self.input1.text = "Ошибка! Введите целое число!"
+        if self.next_screen:
+            result = check_int(self.input1.text)
+            if not result:
+                self.input1.text = "Ошибка! Введите целое число!"
 
+            else:
+                self.manager.current = 'third'
         else:
-            self.manager.current = 'third'
+            self.button.set_disabled(True)
+            self.timer.start()
 
 
 class ThirdScreen(Screen):
@@ -131,6 +140,34 @@ class ScreenButton(Button):
     def on_press(self):
         self.screen.manager.transition.direction = self.direction
         self.screen.manager.current = self.goal
+
+
+class Time(Label):
+    done = BooleanProperty(False)
+
+    def __init__(self, time, **kwargs):
+        self.done = False
+        self.time = time
+        self.current = 0
+        my_text = f"Прошло секунд: {self.current}"
+        super().__init__(text=my_text, **kwargs)
+
+    def restart(self, total, **kwargs):
+        self.done = False
+        self.time = total
+        self.current = 0
+        self.text = f"Прошло секунд: {self.current}"
+        self.start()
+
+    def start(self):
+        Clock.schedule_interval(self.change, 1)
+
+    def change(self, t):
+        self.current += 1
+        self.text = f"Прошло секунд: {self.current}"
+        if self.current >= self.time:
+            self.done = True
+            return False
 
 
 def check_int(number):
