@@ -38,33 +38,25 @@ class FirstScreen(Screen):
             self.manager.current = 'second'
 
 
-class MyApp(App):
-    def build(self):
-        sm = ScreenManager()
-        sm.add_widget(FirstScreen(name="main"))
-        sm.add_widget(SecondScreen(name='second'))
-        sm.add_widget(ThirdScreen(name="third"))
-        sm.add_widget(FourthScreen(name="four"))
-        return sm
-
-
 class SecondScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         text = Label(text=instr.txt_test1)
         text1 = Label(text="Введите результат:")
         self.input1 = TextInput()
+        self.input1.set_disabled(True)
         layout = BoxLayout(padding=10, spacing=10, orientation='vertical')
         layout1 = BoxLayout(orientation='horizontal', size_hint=(1, None), height="30sp")
         self.timer = Time(15)
+        self.timer.bind(done=self.handler)
         self.next_screen = False
         layout.add_widget(text)
         layout1.add_widget(text1)
         layout1.add_widget(self.input1)
         layout.add_widget(layout1)
         layout1.add_widget(self.timer)
-        self.button = Button(text='Далее', size_hint=(.5, .2),
-                        pos_hint={'center_x': 0.5, 'center_y': 0.5})
+        self.button = Button(text='Запустить таймер', size_hint=(.5, .2),
+                             pos_hint={'center_x': 0.5, 'center_y': 0.5})
         self.button.on_press = self.next
         layout.add_widget(self.button)
         self.add_widget(layout)
@@ -80,6 +72,12 @@ class SecondScreen(Screen):
         else:
             self.button.set_disabled(True)
             self.timer.start()
+
+    def handler(self, *args):
+        self.next_screen = True
+        self.button.set_disabled(False)
+        self.button.text = "Далее"
+        self.input1.set_disabled(False)
 
 
 class ThirdScreen(Screen):
@@ -105,29 +103,58 @@ class FourthScreen(Screen):
         layout1 = BoxLayout(padding=8, spacing=8, orientation='vertical')
         layout2 = BoxLayout(orientation="horizontal", size_hint=(1, None), height="30sp")
         layout3 = BoxLayout(orientation="horizontal", size_hint=(1, None), height="30sp")
+        self.timer = Time(15)
+        self.timer.bind(done=self.handler)
+        self.stager = 0
+        self.input1.set_disabled(True)
+        self.input2.set_disabled(True)
         layout1.add_widget(text)
+        layout1.add_widget(self.timer)
         layout2.add_widget(text1)
         layout2.add_widget(self.input1)
         layout3.add_widget(text2)
         layout3.add_widget(self.input2)
         layout1.add_widget(layout2)
         layout1.add_widget(layout3)
-        button = Button(text='Далее!!!', size_hint=(.3, .2),
-                        pos_hint={'center_x': 0.5, 'center_y': 0.5})
-        layout1.add_widget(button)
-        button.on_press = self.next
+        self.next_screen = False
+        self.button = Button(text='Запустить таймер', size_hint=(.3, .2),
+                             pos_hint={'center_x': 0.5, 'center_y': 0.5})
+        layout1.add_widget(self.button)
+        self.button.on_press = self.next
         self.add_widget(layout1)
 
     def next(self):
-        result1 = check_int(self.input1.text)
-        result2 = check_int(self.input2.text)
-        if not result1:
-            self.input1.text = "Ошибка! Введите целое число!"
-        else:
-            if not result2:
-                self.input2.text = "Ошибка! Введите целое число!"
+        if self.next_screen:
+            result1 = check_int(self.input1.text)
+            result2 = check_int(self.input2.text)
+            if not result1:
+                self.input1.text = "Ошибка! Введите целое число!"
             else:
-                self.manager.current = 'main'
+                if not result2:
+                    self.input2.text = "Ошибка! Введите целое число!"
+                else:
+                    self.manager.current = 'main'
+
+        else:
+            self.button.set_disabled(True)
+            self.timer.start()
+
+    def handler(self, *args):
+        if self.timer.done:
+            if self.stager == 0:
+                self.stager += 1
+                self.timer.restart(30)
+                self.input1.set_disabled(False)
+                self.button.text = "Отдыхайте"
+            elif self.stager == 1:
+                self.stager += 1
+                self.timer.restart(15)
+                self.button.text = "Посчитайте свой пульс"
+            elif self.stager == 2:
+                self.input2.set_disabled(False)
+                self.button.set_disabled(False)
+                self.button.text = "Далее"
+                self.next_screen = True
 
 
 class ScreenButton(Button):
@@ -177,6 +204,16 @@ def check_int(number):
     except Exception as err:
         print(err)
         return False
+
+
+class MyApp(App):
+    def build(self):
+        sm = ScreenManager()
+        sm.add_widget(FourthScreen(name="four"))
+        sm.add_widget(FirstScreen(name="main"))
+        sm.add_widget(SecondScreen(name='second'))
+        sm.add_widget(ThirdScreen(name="third"))
+        return sm
 
 
 application = MyApp()
