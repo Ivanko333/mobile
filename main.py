@@ -7,6 +7,7 @@ from kivy.uix.textinput import TextInput
 from kivy.clock import Clock
 from kivy.properties import BooleanProperty
 import instr
+from ruffier import test
 
 
 class FirstScreen(Screen):
@@ -133,7 +134,7 @@ class FourthScreen(Screen):
                 if not result2:
                     self.input2.text = "Ошибка! Введите целое число!"
                 else:
-                    self.manager.current = 'main'
+                    self.manager.current = 'result'
 
         else:
             self.button.set_disabled(True)
@@ -157,16 +158,18 @@ class FourthScreen(Screen):
                 self.next_screen = True
 
 
-class ScreenButton(Button):
-    def __init__(self, screen, direction='right', goal='main', **kwargs):
+class Result(Screen):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.screen = screen
-        self.direction = direction
-        self.goal = goal
+        self.outer = BoxLayout(orientation='vertical', padding=8, spacing=8)
+        self.instr = Label(text='')
+        self.outer.add_widget(self.instr)
+        self.add_widget(self.outer)
+        self.on_enter = self.before
 
-    def on_press(self):
-        self.screen.manager.transition.direction = self.direction
-        self.screen.manager.current = self.goal
+    def before(self):
+        global name
+        self.instr.text = name + '\n' + test(p1, p2, p3, age)
 
 
 class Time(Label):
@@ -197,6 +200,18 @@ class Time(Label):
             return False
 
 
+class ScreenButton(Button):
+    def __init__(self, screen, direction='right', goal='main', **kwargs):
+        super().__init__(**kwargs)
+        self.screen = screen
+        self.direction = direction
+        self.goal = goal
+
+    def on_press(self):
+        self.screen.manager.transition.direction = self.direction
+        self.screen.manager.current = self.goal
+
+
 def check_int(number):
     try:
         number = int(number)
@@ -209,10 +224,11 @@ def check_int(number):
 class MyApp(App):
     def build(self):
         sm = ScreenManager()
-        sm.add_widget(FourthScreen(name="four"))
         sm.add_widget(FirstScreen(name="main"))
         sm.add_widget(SecondScreen(name='second'))
         sm.add_widget(ThirdScreen(name="third"))
+        sm.add_widget(FourthScreen(name="four"))
+        sm.add_widget(Result(name="result"))
         return sm
 
 
